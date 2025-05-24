@@ -1,33 +1,57 @@
-import Link from 'next/link';
-import { SubdomainForm } from './subdomain-form';
-import { rootDomain } from '@/lib/utils';
+'use client';
 
-export default async function HomePage() {
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import jsPDF from 'jspdf';
+import emailjs from '@emailjs/browser';
+
+export default function Home() {
+  const [theme, setTheme] = useState('Emploi');
+  const [data, setData] = useState('');
+  const [email, setEmail] = useState('');
+
+  const generatePDF = () => {
+    const doc = new jsPDF();
+    doc.text(`Veille médiatique – Thème : ${theme}\n\n${data}`, 10, 10);
+    doc.save(`veille_${theme.toLowerCase()}.pdf`);
+  };
+
+  const sendEmail = () => {
+    emailjs.send(
+      'your_service_id',
+      'your_template_id',
+      {
+        message: data,
+        subject: `Veille médiatique – ${theme}`,
+        to_email: email,
+      },
+      'your_user_id'
+    ).then(() => alert('Email envoyé')).catch(err => alert('Erreur : ' + err.text));
+  };
+
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-blue-50 to-white p-4 relative">
-      <div className="absolute top-4 right-4">
-        <Link
-          href="/admin"
-          className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
-        >
-          Admin
-        </Link>
-      </div>
+    <main className="max-w-2xl mx-auto p-4">
+      <h1 className="text-2xl font-bold mb-4 text-center">Veille médiatique – {theme}</h1>
 
-      <div className="w-full max-w-md space-y-8">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold tracking-tight text-gray-900">
-            {rootDomain}
-          </h1>
-          <p className="mt-3 text-lg text-gray-600">
-            Create your own subdomain with a custom emoji
-          </p>
-        </div>
+      <Textarea
+        placeholder="Entrez ici votre contenu de veille (ex : actualités emploi, sources, extraits presse...)"
+        value={data}
+        onChange={e => setData(e.target.value)}
+        className="mb-4 h-64 w-full"
+      />
 
-        <div className="mt-8 bg-white shadow-md rounded-lg p-6">
-          <SubdomainForm />
-        </div>
+      <div className="flex flex-col sm:flex-row gap-2 mb-4 w-full">
+        <Button className="w-full sm:w-auto" onClick={generatePDF}>Exporter en PDF</Button>
+        <input
+          type="email"
+          placeholder="Email du destinataire"
+          className="border rounded px-2 py-1 w-full sm:w-auto"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+        />
+        <Button className="w-full sm:w-auto" onClick={sendEmail}>Envoyer par e-mail</Button>
       </div>
-    </div>
+    </main>
   );
 }
